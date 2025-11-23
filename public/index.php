@@ -1,0 +1,134 @@
+<?php
+session_start();
+
+require_once __DIR__ . '/../src/Database.php';
+require_once __DIR__ . '/../src/Auth.php';
+
+// Simple Router
+$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
+// Helper to load views
+function view($name, $data = []) {
+    extract($data);
+    require __DIR__ . "/../views/{$name}.php";
+}
+
+// Routes
+if ($uri === '/' || $uri === '/index.php') {
+    // Public Home
+    $db = Database::getInstance()->getConnection();
+    
+    // Fetch Settings
+    $stmt = $db->query("SELECT * FROM settings");
+    $settings = [];
+    while ($row = $stmt->fetch()) {
+        $settings[$row['key']] = $row['value'];
+    }
+
+    // Fetch Photos
+    $stmt = $db->query("SELECT * FROM photos ORDER BY created_at DESC");
+    $photos = $stmt->fetchAll();
+
+    view('home', ['settings' => $settings, 'photos' => $photos]);
+
+} elseif ($uri === '/rsvp' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Handle RSVP Submission
+    $name = $_POST['name'] ?? '';
+    $phone = $_POST['phone'] ?? '';
+    $guests = $_POST['guests'] ?? 0;
+    $message = $_POST['message'] ?? '';
+
+    if ($name && $guests) {
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("INSERT INTO rsvps (name, phone, guests_count, message) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$name, $phone, $guests, $message]);
+    }
+    
+    header('Location: /?rsvp_success=1');
+    exit;
+
+} elseif ($uri === '/admin/login') {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $username = $_POST['username'] ?? '';
+        $password = $_POST['password'] ?? '';
+        if (Auth::login($username, $password)) {
+            header('Location: /admin/dashboard');
+            exit;
+        } else {
+            $error = "Invalid credentials";
+            view('admin/login', ['error' => $error]);
+        }
+    } else {
+        view('admin/login');
+    }
+
+} elseif ($uri === '/admin/logout') {
+    Auth::logout();
+    header('Location: /admin/login');
+    exit;
+
+} elseif ($uri === '/admin/dashboard') {
+    Auth::requireLogin();
+    
+    $db = Database::getInstance()->getConnection();
+    
+    // Handle Settings Update
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
+        $stmt = $db->prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)");
+        $stmt->execute(['couple_names', $_POST['couple_names']]);
+        $stmt->execute(['wedding_date', $_POST['wedding_date']]);
+        $stmt->execute(['wedding_address', $_POST['wedding_address']]);
+        $stmt->execute(['pix_key', $_POST['pix_key']]);
+        $success = "Settings updated!";
+    }
+
+    // Handle Photo Upload
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
+        $uploadDir = __DIR__ . '/uploads/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+        
+        $filename = uniqid() . '_' . basename($_FILES['photo']['name']);
+        $targetPath = $uploadDir . $filename;
+        
+        if (move_uploaded_file($_FILES['photo']['tmp_name'], $targetPath)) {
+            $stmt = $db->prepare("INSERT INTO photos (filename) VALUES (?)");
+            $stmt->execute([$filename]);
+            $success = "Photo uploaded!";
+        }
+    }
+
+    // Handle Photo Delete
+    if (isset($_GET['delete_photo'])) {
+        $id = $_GET['delete_photo'];
+        $stmt = $db->prepare("SELECT filename FROM photos WHERE id = ?");
+        $stmt->execute([$id]);
+        $photo = $stmt->fetch();
+        if ($photo) {
+            unlink(__DIR__ . '/uploads/' . $photo['filename']);
+            $db->prepare("DELETE FROM photos WHERE id = ?")->execute([$id]);
+        }
+        header('Location: /admin/dashboard');
+        exit;
+    }
+
+    // Fetch Data
+    $stmt = $db->query("SELECT * FROM settings");
+    $settings = [];
+    while ($row = $stmt->fetch()) {
+        $settings[$row['key']] = $row['value'];
+    }
+
+    $rsvps = $db->query("SELECT * FROM rsvps ORDER BY created_at DESC")->fetchAll();
+    $photos = $db->query("SELECT * FROM photos ORDER BY created_at DESC")->fetchAll();
+
+    view('admin/dashboard', [
+        'settings' => $settings, 
+        'rsvps' => $rsvps, 
+        'photos' => $photos,
+        'success' => $success ?? null
+    ]);
+
+} else {
+    http_response_code(404);
+    echo "404 Not Found";
+}
