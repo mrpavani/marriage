@@ -1,5 +1,11 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteRule ^$ public/ [L]
-    RewriteRule ^((?!public/).*)$ public/$1 [L,NC]
+    RewriteBase /
+    
+    # Se a requisição já for para public, não faz nada
+    RewriteCond %{REQUEST_URI} ^/public/
+    RewriteRule ^(.*)$ $1 [L]
+
+    # Caso contrário, manda tudo para a pasta public
+    RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
