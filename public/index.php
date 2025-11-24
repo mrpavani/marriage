@@ -80,8 +80,9 @@ if ($uri === '/' || $uri === '/index.php') {
 
     // Handle Settings Update
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
-        $stmt = $db->prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)");
+        $stmt = $db->prepare("INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)");
         $stmt->execute(['couple_names', $_POST['couple_names']]);
+        $stmt->execute(['couple_names_color', $_POST['couple_names_color'] ?? '#000000']);
         $stmt->execute(['wedding_date', $_POST['wedding_date']]);
         $stmt->execute(['wedding_address', $_POST['wedding_address']]);
         $stmt->execute(['pix_key', $_POST['pix_key']]);
@@ -111,7 +112,10 @@ if ($uri === '/' || $uri === '/index.php') {
         $stmt->execute([$id]);
         $photo = $stmt->fetch();
         if ($photo) {
-            unlink(__DIR__ . '/uploads/' . $photo['filename']);
+            $filePath = __DIR__ . '/uploads/' . $photo['filename'];
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
             $db->prepare("DELETE FROM photos WHERE id = ?")->execute([$id]);
         }
         header('Location: /admin/dashboard');

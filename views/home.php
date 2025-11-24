@@ -17,7 +17,9 @@
         <div class="hero-overlay"></div>
         <div class="hero-content fade-in-up">
             <div class="date-badge"><?= date('d.m.Y', strtotime($settings['wedding_date'] ?? 'now')) ?></div>
-            <h1 class="couple-names"><?= htmlspecialchars($settings['couple_names'] ?? 'Maria & João') ?></h1>
+            <h1 class="couple-names"
+                style="color: <?= htmlspecialchars($settings['couple_names_color'] ?? '#000000') ?>">
+                <?= htmlspecialchars($settings['couple_names'] ?? 'Maria & João') ?></h1>
             <p class="subtitle">Vamos celebrar o amor</p>
             <a href="#rsvp" class="btn-outline">Confirme sua Presença</a>
         </div>
