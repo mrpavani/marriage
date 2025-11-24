@@ -1,12 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($settings['couple_names'] ?? 'Wedding') ?></title>
     <link rel="stylesheet" href="/assets/css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
     <!-- Hero Section -->
     <header class="hero parallax">
@@ -30,14 +34,17 @@
                 <div class="info-card">
                     <div class="icon">📅</div>
                     <h3>Quando</h3>
-                    <p class="info-text"><?= date('d \d\e F \d\e Y', strtotime($settings['wedding_date'] ?? 'now')) ?></p>
-                    <p class="info-subtext">Às <?= date('H:i', strtotime($settings['wedding_date'] ?? 'now')) ?> horas</p>
+                    <p class="info-text"><?= date('d \d\e F \d\e Y', strtotime($settings['wedding_date'] ?? 'now')) ?>
+                    </p>
+                    <p class="info-subtext">Às <?= date('H:i', strtotime($settings['wedding_date'] ?? 'now')) ?> horas
+                    </p>
                 </div>
                 <div class="info-card">
                     <div class="icon">📍</div>
                     <h3>Onde</h3>
                     <p class="info-text"><?= htmlspecialchars($settings['wedding_address'] ?? '') ?></p>
-                    <a href="https://maps.google.com/?q=<?= urlencode($settings['wedding_address'] ?? '') ?>" target="_blank" class="link-underline">Ver no Mapa</a>
+                    <a href="https://maps.google.com/?q=<?= urlencode($settings['wedding_address'] ?? '') ?>"
+                        target="_blank" class="link-underline">Ver no Mapa</a>
                 </div>
             </div>
         </div>
@@ -48,21 +55,21 @@
 
     <!-- Gallery Section -->
     <?php if (!empty($photos)): ?>
-    <section class="section gallery-section">
-        <div class="container">
-            <div class="section-header">
-                <span class="overline">Momentos</span>
-                <h2>Nossa História</h2>
+        <section class="section gallery-section">
+            <div class="container">
+                <div class="section-header">
+                    <span class="overline">Momentos</span>
+                    <h2>Nossa História</h2>
+                </div>
+                <div class="gallery-masonry">
+                    <?php foreach ($photos as $photo): ?>
+                        <div class="gallery-item">
+                            <img src="/uploads/<?= htmlspecialchars($photo['filename']) ?>" alt="Photo" loading="lazy">
+                        </div>
+                    <?php endforeach; ?>
+                </div>
             </div>
-            <div class="gallery-masonry">
-                <?php foreach ($photos as $photo): ?>
-                    <div class="gallery-item">
-                        <img src="/uploads/<?= htmlspecialchars($photo['filename']) ?>" alt="Photo" loading="lazy">
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </section>
+        </section>
     <?php endif; ?>
 
     <!-- Parallax Divider 2 -->
@@ -76,13 +83,18 @@
                 <h2>Lista de Casamento</h2>
             </div>
             <div class="gift-content">
-                <p>Sua presença é o nosso maior presente! Mas se quiser nos presentear, aceitamos mimos via PIX para nossa lua de mel.</p>
+                <p>Sua presença é o nosso maior presente! Mas se quiser nos presentear, aceitamos mimos via PIX para
+                    nossa lua de mel.</p>
                 <div class="pix-card">
                     <h3>Chave PIX</h3>
                     <div class="pix-key-container">
                         <code id="pix-key"><?= htmlspecialchars($settings['pix_key'] ?? '') ?></code>
                         <button onclick="copyPix()" class="btn-copy" title="Copiar">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
                         </button>
                     </div>
                 </div>
@@ -98,7 +110,7 @@
                     <span class="overline">RSVP</span>
                     <h2>Confirme sua Presença</h2>
                 </div>
-                
+
                 <?php if (isset($_GET['rsvp_success'])): ?>
                     <div class="success-message fade-in">
                         <h3>Obrigado!</h3>
@@ -139,6 +151,8 @@
 
     <footer>
         <p>Feito com ❤️ para <?= htmlspecialchars($settings['couple_names'] ?? 'os noivos') ?></p>
+        <p style="margin-top: 10px; font-size: 0.8rem;"><a href="/admin/login"
+                style="color: #555; text-decoration: none;">Área Administrativa</a></p>
     </footer>
 
     <script>
@@ -168,4 +182,5 @@
         });
     </script>
 </body>
+
 </html>

@@ -133,7 +133,7 @@ h4 {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.6);
 }
 
 .hero-content {
@@ -147,6 +147,7 @@ h4 {
     margin: 1rem 0;
     line-height: 1.1;
     font-style: italic;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .date-badge {
