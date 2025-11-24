@@ -7,8 +7,14 @@ require_once __DIR__ . '/../src/Auth.php';
 // Simple Router
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
+// Remove /public prefix if present (fix for some shared hosting envs)
+if (strpos($uri, '/public') === 0) {
+    $uri = substr($uri, 7);
+}
+
 // Helper to load views
-function view($name, $data = []) {
+function view($name, $data = [])
+{
     extract($data);
     require __DIR__ . "/../views/{$name}.php";
 }
@@ -17,7 +23,7 @@ function view($name, $data = []) {
 if ($uri === '/' || $uri === '/index.php') {
     // Public Home
     $db = Database::getInstance()->getConnection();
-    
+
     // Fetch Settings
     $stmt = $db->query("SELECT * FROM settings");
     $settings = [];
@@ -43,7 +49,7 @@ if ($uri === '/' || $uri === '/index.php') {
         $stmt = $db->prepare("INSERT INTO rsvps (name, phone, guests_count, message) VALUES (?, ?, ?, ?)");
         $stmt->execute([$name, $phone, $guests, $message]);
     }
-    
+
     header('Location: /?rsvp_success=1');
     exit;
 
@@ -69,9 +75,9 @@ if ($uri === '/' || $uri === '/index.php') {
 
 } elseif ($uri === '/admin/dashboard') {
     Auth::requireLogin();
-    
+
     $db = Database::getInstance()->getConnection();
-    
+
     // Handle Settings Update
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
         $stmt = $db->prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)");
@@ -85,11 +91,12 @@ if ($uri === '/' || $uri === '/index.php') {
     // Handle Photo Upload
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
         $uploadDir = __DIR__ . '/uploads/';
-        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
-        
+        if (!is_dir($uploadDir))
+            mkdir($uploadDir, 0777, true);
+
         $filename = uniqid() . '_' . basename($_FILES['photo']['name']);
         $targetPath = $uploadDir . $filename;
-        
+
         if (move_uploaded_file($_FILES['photo']['tmp_name'], $targetPath)) {
             $stmt = $db->prepare("INSERT INTO photos (filename) VALUES (?)");
             $stmt->execute([$filename]);
@@ -122,8 +129,8 @@ if ($uri === '/' || $uri === '/index.php') {
     $photos = $db->query("SELECT * FROM photos ORDER BY created_at DESC")->fetchAll();
 
     view('admin/dashboard', [
-        'settings' => $settings, 
-        'rsvps' => $rsvps, 
+        'settings' => $settings,
+        'rsvps' => $rsvps,
         'photos' => $photos,
         'success' => $success ?? null
     ]);
