@@ -19,7 +19,8 @@
             <div class="date-badge"><?= date('d.m.Y', strtotime($settings['wedding_date'] ?? 'now')) ?></div>
             <h1 class="couple-names"
                 style="color: <?= htmlspecialchars($settings['couple_names_color'] ?? '#000000') ?>">
-                <?= htmlspecialchars($settings['couple_names'] ?? 'Maria & João') ?></h1>
+                <?= htmlspecialchars($settings['couple_names'] ?? 'Maria & João') ?>
+            </h1>
             <p class="subtitle">Vamos celebrar o amor</p>
             <a href="#rsvp" class="btn-outline">Confirme sua Presença</a>
         </div>
@@ -104,6 +105,75 @@
         </div>
     </section>
 
+    <!-- Countdown Section -->
+    <section class="section countdown-section" style="background: #f8f9fa; padding: 4rem 0; text-align: center;">
+        <div class="container">
+            <div class="section-header">
+                <span class="overline">Contagem Regressiva</span>
+                <h2>Falta Pouco!</h2>
+            </div>
+            <div id="countdown"
+                style="display: flex; justify-content: center; gap: 2rem; font-family: 'Playfair Display', serif;">
+                <div class="countdown-item">
+                    <span id="days" style="font-size: 3rem; color: #d4af37; font-weight: bold;">00</span>
+                    <span style="display: block; font-size: 0.9rem; letter-spacing: 2px;">DIAS</span>
+                </div>
+                <div class="countdown-item">
+                    <span id="hours" style="font-size: 3rem; color: #d4af37; font-weight: bold;">00</span>
+                    <span style="display: block; font-size: 0.9rem; letter-spacing: 2px;">HORAS</span>
+                </div>
+                <div class="countdown-item">
+                    <span id="minutes" style="font-size: 3rem; color: #d4af37; font-weight: bold;">00</span>
+                    <span style="display: block; font-size: 0.9rem; letter-spacing: 2px;">MINUTOS</span>
+                </div>
+                <div class="countdown-item">
+                    <span id="seconds" style="font-size: 3rem; color: #d4af37; font-weight: bold;">00</span>
+                    <span style="display: block; font-size: 0.9rem; letter-spacing: 2px;">SEGUNDOS</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Poll Section -->
+    <section class="section poll-section" style="padding: 4rem 0;">
+        <div class="container">
+            <div class="section-header">
+                <span class="overline">Lua de Mel</span>
+                <h2>Para onde devemos ir?</h2>
+                <p>Ajude-nos a escolher o destino da nossa viagem dos sonhos!</p>
+            </div>
+
+            <?php if (isset($_GET['vote_success'])): ?>
+                <div class="success-message fade-in"
+                    style="text-align: center; color: #155724; background: #d4edda; padding: 1rem; border-radius: 4px; max-width: 600px; margin: 0 auto;">
+                    <h3>Voto Registrado!</h3>
+                    <p>Obrigado por nos ajudar a escolher.</p>
+                </div>
+            <?php else: ?>
+                <form action="/vote" method="POST" class="poll-form" style="max-width: 600px; margin: 0 auto;">
+                    <div class="poll-options" style="display: grid; gap: 1rem;">
+                        <?php
+                        $poll_options = [
+                            1 => $settings['honeymoon_dest_1'] ?? 'Destino Surpresa 1',
+                            2 => $settings['honeymoon_dest_2'] ?? 'Destino Surpresa 2',
+                            3 => $settings['honeymoon_dest_3'] ?? 'Destino Surpresa 3',
+                            4 => 'Lua de mel mais caseira'
+                        ];
+                        ?>
+                        <?php foreach ($poll_options as $key => $label): ?>
+                            <label class="poll-option"
+                                style="display: block; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                                <input type="radio" name="option" value="<?= $key ?>" required style="margin-right: 10px;">
+                                <span style="font-size: 1.1rem;"><?= htmlspecialchars($label) ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <button type="submit" class="btn-primary btn-block" style="margin-top: 1.5rem;">Votar</button>
+                </form>
+            <?php endif; ?>
+        </div>
+    </section>
+
     <!-- RSVP Section -->
     <section id="rsvp" class="section rsvp-section">
         <div class="container">
@@ -127,7 +197,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Telefone (WhatsApp)</label>
-                                <input type="tel" name="phone" placeholder="(00) 00000-0000">
+                                <input type="tel" name="phone" id="phone" placeholder="(99) 99999-9999" maxlength="15">
                             </div>
                         </div>
                         <div class="form-group">
@@ -158,6 +228,38 @@
     </footer>
 
     <script>
+        // Countdown Timer
+        const weddingDate = new Date("<?= $settings['wedding_date'] ?? 'now' ?>").getTime();
+
+        const x = setInterval(function () {
+            const now = new Date().getTime();
+            const distance = weddingDate - now;
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById("days").innerText = String(days).padStart(2, '0');
+            document.getElementById("hours").innerText = String(hours).padStart(2, '0');
+            document.getElementById("minutes").innerText = String(minutes).padStart(2, '0');
+            document.getElementById("seconds").innerText = String(seconds).padStart(2, '0');
+
+            if (distance < 0) {
+                clearInterval(x);
+                document.getElementById("countdown").innerHTML = "<h3>O grande dia chegou!</h3>";
+            }
+        }, 1000);
+
+        // Phone Mask
+        const phoneInput = document.getElementById('phone');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function (e) {
+                let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+                e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+            });
+        }
+
         function copyPix() {
             const key = document.getElementById('pix-key').innerText;
             navigator.clipboard.writeText(key).then(() => {

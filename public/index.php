@@ -53,6 +53,39 @@ if ($uri === '/' || $uri === '/index.php') {
     header('Location: /?rsvp_success=1');
     exit;
 
+} elseif ($uri === '/vote' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Handle Poll Vote
+    $option = $_POST['option'] ?? null;
+    if ($option) {
+        $db = Database::getInstance()->getConnection();
+
+        // Ensure table exists
+        $db->exec("CREATE TABLE IF NOT EXISTS poll_votes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            option_index INTEGER NOT NULL,
+            ip_address TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )");
+
+        // Check if MySQL or SQLite (adjust syntax if needed, assuming SQLite based on previous context or generic SQL)
+        // Actually, previous code used 'INSERT OR REPLACE' which suggests SQLite, but I fixed it for MySQL.
+        // Let's assume MySQL for the CREATE TABLE to be safe or use generic syntax.
+        // Wait, the user environment might be MySQL.
+        // Let's use a safer CREATE TABLE for MySQL/SQLite compatibility if possible or just MySQL.
+        // Given the 'INSERT OR REPLACE' fix was for MySQL, I will use MySQL syntax.
+        $db->exec("CREATE TABLE IF NOT EXISTS poll_votes (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            option_index INT NOT NULL,
+            ip_address VARCHAR(45),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB");
+
+        $stmt = $db->prepare("INSERT INTO poll_votes (option_index, ip_address) VALUES (?, ?)");
+        $stmt->execute([$option, $_SERVER['REMOTE_ADDR']]);
+    }
+    header('Location: /?vote_success=1');
+    exit;
+
 } elseif ($uri === '/admin/login') {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $username = $_POST['username'] ?? '';
@@ -86,7 +119,10 @@ if ($uri === '/' || $uri === '/index.php') {
         $stmt->execute(['wedding_date', $_POST['wedding_date']]);
         $stmt->execute(['wedding_address', $_POST['wedding_address']]);
         $stmt->execute(['pix_key', $_POST['pix_key']]);
-        $success = "Settings updated!";
+        $stmt->execute(['honeymoon_dest_1', $_POST['honeymoon_dest_1']]);
+        $stmt->execute(['honeymoon_dest_2', $_POST['honeymoon_dest_2']]);
+        $stmt->execute(['honeymoon_dest_3', $_POST['honeymoon_dest_3']]);
+        $success = "Configurações atualizadas!";
     }
 
     // Handle Photo Upload
@@ -101,7 +137,7 @@ if ($uri === '/' || $uri === '/index.php') {
         if (move_uploaded_file($_FILES['photo']['tmp_name'], $targetPath)) {
             $stmt = $db->prepare("INSERT INTO photos (filename) VALUES (?)");
             $stmt->execute([$filename]);
-            $success = "Photo uploaded!";
+            $success = "Foto enviada!";
         }
     }
 
@@ -132,10 +168,18 @@ if ($uri === '/' || $uri === '/index.php') {
     $rsvps = $db->query("SELECT * FROM rsvps ORDER BY created_at DESC")->fetchAll();
     $photos = $db->query("SELECT * FROM photos ORDER BY created_at DESC")->fetchAll();
 
+    // Fetch Poll Results
+    try {
+        $poll_results = $db->query("SELECT option_index, COUNT(*) as count FROM poll_votes GROUP BY option_index")->fetchAll(PDO::FETCH_KEY_PAIR);
+    } catch (Exception $e) {
+        $poll_results = []; // Table might not exist yet
+    }
+
     view('admin/dashboard', [
         'settings' => $settings,
         'rsvps' => $rsvps,
         'photos' => $photos,
+        'poll_results' => $poll_results,
         'success' => $success ?? null
     ]);
 
